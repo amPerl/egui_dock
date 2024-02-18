@@ -650,7 +650,7 @@ fn start_puffin_server() {
 
     match puffin_http::Server::new("127.0.0.1:8585") {
         Ok(puffin_server) => {
-            eprintln!("Run:  cargo install puffin_viewer@0.18 && puffin_viewer --url 127.0.0.1:8585");
+            eprintln!("Run:  cargo install puffin_viewer@^0.20 && puffin_viewer --url 127.0.0.1:8585");
 
             std::process::Command::new("puffin_viewer")
                 .arg("--url")
