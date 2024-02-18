@@ -63,6 +63,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
     ///
     /// See also [`show`](Self::show).
     pub fn show_inside(mut self, ui: &mut Ui, tab_viewer: &mut impl TabViewer<Tab = Tab>) {
+        #[cfg(feature = "puffin")]
+        puffin::profile_function!();
+
         self.style
             .get_or_insert(Style::from_egui(ui.style().as_ref()));
         self.window_bounds.get_or_insert(ui.ctx().screen_rect());
@@ -269,6 +272,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         surf_index: SurfaceIndex,
         fade_style: Option<(&Style, f32)>,
     ) {
+        #[cfg(feature = "puffin")]
+        puffin::profile_function!(format!("{:?}", surf_index.0));
+
         // First compute all rect sizes in the node graph.
         let max_rect = self.allocate_area_for_root_node(ui, surf_index);
         for node_index in self.dock_state[surf_index].breadth_first_index_iter() {

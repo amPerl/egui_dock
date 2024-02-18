@@ -26,6 +26,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         fade_style: Option<(&Style, f32)>,
     ) {
+        #[cfg(feature = "puffin")]
+        puffin::profile_function!(format!("{:?}", (surface_index.0, node_index.0)));
+
         assert!(self.dock_state[surface_index][node_index].is_leaf());
 
         let rect = self.dock_state[surface_index][node_index]
@@ -76,6 +79,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tab_viewer: &mut impl TabViewer<Tab = Tab>,
         fade_style: Option<&Style>,
     ) -> Rect {
+        #[cfg(feature = "puffin")]
+        puffin::profile_function!(format!("{:?}", (surface_index.0, node_index.0)));
+
         assert!(self.dock_state[surface_index][node_index].is_leaf());
 
         let style = fade_style.unwrap_or_else(|| self.style.as_ref().unwrap());
@@ -510,6 +516,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         show_close_button: bool,
         fade: Option<&Style>,
     ) -> (Response, Option<Response>) {
+        #[cfg(feature = "puffin")]
+        puffin::profile_function!(format!("{}", label.text()));
+
         let style = fade.unwrap_or_else(|| self.style.as_ref().unwrap());
         let galley = label.into_galley(ui, None, f32::INFINITY, TextStyle::Button);
         let x_spacing = 8.0;
@@ -730,6 +739,9 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
         tabbar_rect: Rect,
         fade: Option<(&Style, f32)>,
     ) {
+        #[cfg(feature = "puffin")]
+        puffin::profile_function!(format!("{:?}", (surface_index.0, node_index.0)));
+
         let (body_rect, _body_response) =
             ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::hover());
 

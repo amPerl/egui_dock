@@ -213,7 +213,7 @@
 //! ```
 
 #![warn(missing_docs)]
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 
 #[allow(deprecated)]
 pub use dock_state::*;

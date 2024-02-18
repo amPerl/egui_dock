@@ -17,9 +17,14 @@ default = []
 # Enable serialization of `Tree`.
 serde = ["dep:serde", "egui/serde"]
 
+# Enable puffin profiler integration.
+puffin = ["dep:puffin", "dep:puffin_http", "egui/puffin"]
+
 [dependencies]
-egui = { version = "0.25", default-features = false }
+egui = { version = "0.25", default-features = false, features = ["puffin"] }
 serde = { version = "1", optional = true, features = ["derive"] }
+puffin = { version = "0.18", optional = true }
+puffin_http = { version = "0.15", optional = true }
 
 duplicate = "1.0"
 paste = "1.0"
@@ -28,4 +33,5 @@ paste = "1.0"
 eframe = { version = "0.25", default-features = false, features = [
     "default_fonts",
     "glow",
+    "puffin",
 ] }
