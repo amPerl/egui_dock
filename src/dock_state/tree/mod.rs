@@ -25,6 +25,7 @@ pub use node_index::NodeIndex;
 pub use tab_index::TabIndex;
 pub use tab_iter::TabIter;
 
+use egui::ahash::HashSet;
 use egui::Rect;
 use std::{
     fmt,
@@ -734,22 +735,86 @@ impl<Tab> Tree<Tab> {
         tab
     }
 
-    /// Returns a new Tree while mapping the tab type
-    pub fn map_tabs<F, NewTab>(&self, function: F) -> Tree<NewTab>
+    /// Returns a new [`Tree`] while mapping and filtering the tab type.
+    /// Any remaining empty [`Node`]s are removed.
+    pub fn filter_map_tabs<F, NewTab>(&self, function: F) -> Tree<NewTab>
     where
-        F: FnMut(&Tab) -> NewTab + Clone,
+        F: Clone + FnMut(&Tab) -> Option<NewTab>,
     {
         let Tree {
             focused_node,
             nodes,
         } = self;
+        let mut emptied_nodes = HashSet::default();
         let nodes = nodes
             .iter()
-            .map(|node| node.map_tabs(function.clone()))
+            .enumerate()
+            .map(|(index, node)| {
+                let node = node.filter_map_tabs(function.clone());
+                if node.is_empty() {
+                    emptied_nodes.insert(NodeIndex(index));
+                }
+                node
+            })
             .collect();
-        Tree {
+        let mut new_tree = Tree {
             nodes,
             focused_node: *focused_node,
+        };
+        new_tree.balance(emptied_nodes);
+        new_tree
+    }
+
+    /// Returns a new [`Tree`] while mapping the tab type.
+    pub fn map_tabs<F, NewTab>(&self, mut function: F) -> Tree<NewTab>
+    where
+        F: Clone + FnMut(&Tab) -> NewTab,
+    {
+        self.filter_map_tabs(move |tab| Some(function(tab)))
+    }
+
+    /// Returns a new [`Tree`] while filtering the tab type.
+    /// Any remaining empty [`Node`]s are removed.
+    pub fn filter_tabs<F>(&self, mut predicate: F) -> Tree<Tab>
+    where
+        F: Clone + FnMut(&Tab) -> bool,
+        Tab: Clone,
+    {
+        self.filter_map_tabs(move |tab| predicate(tab).then(|| tab.clone()))
+    }
+
+    /// Removes all tabs for which `predicate` returns `false`.
+    /// Any remaining empty [`Node`]s are also removed.
+    pub fn retain_tabs<F>(&mut self, predicate: F)
+    where
+        F: Clone + FnMut(&mut Tab) -> bool,
+    {
+        let mut emptied_nodes = HashSet::default();
+        for (index, node) in self.nodes.iter_mut().enumerate() {
+            node.retain_tabs(predicate.clone());
+            if node.is_empty() {
+                emptied_nodes.insert(NodeIndex(index));
+            }
+        }
+        self.balance(emptied_nodes);
+    }
+
+    fn balance(&mut self, emptied_nodes: HashSet<NodeIndex>) {
+        let mut emptied_parents = HashSet::default();
+        for parent_index in emptied_nodes.into_iter().filter_map(|ni| ni.parent()) {
+            if self[parent_index.left()].is_empty() && self[parent_index.right()].is_empty() {
+                self[parent_index] = Node::Empty;
+                emptied_parents.insert(parent_index);
+            } else if self[parent_index.left()].is_empty() {
+                self.nodes.swap(parent_index.0, parent_index.right().0);
+                self[parent_index.right()] = Node::Empty;
+            } else if self[parent_index.right()].is_empty() {
+                self.nodes.swap(parent_index.0, parent_index.left().0);
+                self[parent_index.left()] = Node::Empty;
+            }
+        }
+        if !emptied_parents.is_empty() {
+            self.balance(emptied_parents);
         }
     }
 }

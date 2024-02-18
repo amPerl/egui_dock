@@ -1,5 +1,26 @@
 # egui_dock changelog
 
+## 0.11.2 - 2024-02-16
+
+### Fixed
+From [#225](https://github.com/Adanos020/egui_dock/pull/225):
+- Tabs now always appear at the pointer position while being dragged.
+- Retaining tabs no longer breaks the binary tree leading to a panic.
+- Filtering tabs no longer leaves some leaves empty and now correctly rearranges the tree.
+
+## 0.11.1 - 2024-02-09
+
+### Fixed
+- Bug where tabs couldn't be re-docked onto the main surface if it's empty ([#222](https://github.com/Adanos020/egui_dock/pull/222))
+
+## 0.11.0 - 2024-02-06
+
+### Added
+- `filter_map_tabs`, `filter_tabs`, and `retain_tabs` ([#217](https://github.com/Adanos020/egui_dock/pull/217))
+
+### Breaking changes
+- Upgraded to egui 0.26
+
 ## 0.10.0 - 2024-01-09
 
 ### Added

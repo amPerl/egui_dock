@@ -2,8 +2,8 @@ use std::ops::RangeInclusive;
 
 use egui::{
     epaint::TextShape, lerp, pos2, vec2, Align, Align2, Button, CursorIcon, Frame, Id, Key,
-    LayerId, Layout, NumExt, Order, PointerButton, Rect, Response, Rounding, ScrollArea, Sense,
-    Stroke, TextStyle, Ui, Vec2, WidgetText,
+    LayerId, Layout, NumExt, Order, Rect, Response, Rounding, ScrollArea, Sense, Stroke, TextStyle,
+    Ui, Vec2, WidgetText,
 };
 
 use crate::{
@@ -216,7 +216,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                 .with((tab_index, "tab"));
             let tab_index = TabIndex(tab_index);
             let is_being_dragged = tabs_ui.memory(|mem| mem.is_being_dragged(id))
-                && tabs_ui.input(|i| i.pointer.primary_down() || i.pointer.primary_released())
+                && tabs_ui.input(|i| i.pointer.is_decidedly_dragging())
                 && self.draggable_tabs;
 
             if is_being_dragged {
@@ -261,13 +261,10 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                     .response;
                 let title_id = response.id;
 
-                let sense = Sense::click_and_drag();
-                let response = tabs_ui.interact(response.rect, id, sense);
+                let response = tabs_ui.interact(response.rect, id, Sense::click_and_drag());
 
                 if let Some(pointer_pos) = tabs_ui.ctx().pointer_interact_pos() {
-                    let center = response.rect.center();
-                    let start = state.drag_start.unwrap_or(center);
-
+                    let start = *state.drag_start.get_or_insert(pointer_pos);
                     let delta = pointer_pos - start;
                     if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
                         tabs_ui.ctx().translate_layer(layer_id, delta);
@@ -369,17 +366,15 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
                         self.new_focused = Some((surface_index, node_index));
                     }
                 }
-                let response = tabs_ui.interact(response.rect, id, sense);
-                if response.drag_started_by(PointerButton::Primary) {
-                    state.drag_start = response.hover_pos();
-                }
 
+                let response = tabs_ui.interact(response.rect, id, sense);
                 if let Some(pos) = state.last_hover_pos {
                     // Use response.rect.contains instead of
                     // response.hovered as the dragged tab covers
                     // the underlying tab
                     if state.drag_start.is_some() && response.rect.contains(pos) {
                         self.tab_hover_rect = Some((response.rect, tab_index));
+                        state.drag_start = None;
                     }
                 }
 
@@ -700,7 +695,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
                 if let Some(pos) = state.last_hover_pos {
                     if scroll_bar_rect.contains(pos) {
-                        *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x)
+                        *scroll += ui.input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x)
                             * points_to_scroll_coefficient;
                     }
                 }
@@ -721,7 +716,7 @@ impl<'tree, Tab> DockArea<'tree, Tab> {
 
             // Handle user input.
             if tabbar_response.hovered() {
-                *scroll += ui.input(|i| i.scroll_delta.y + i.scroll_delta.x);
+                *scroll += ui.input(|i| i.smooth_scroll_delta.y + i.smooth_scroll_delta.x);
             }
         }
 
